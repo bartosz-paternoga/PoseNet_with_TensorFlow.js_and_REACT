@@ -1,81 +1,54 @@
 import React, { Component } from 'react';
 import Comp from './component1';
+import Webcam from './webcam';
+import Loader from './loader';
+import DrawSkeleton from './drawSkeleton';
 import * as posenet from '@tensorflow-models/posenet';
 import * as tf from '@tensorflow/tfjs';
 
+
 class App extends Component {
 
-
-
-     startWebcam = () =>{
-
-      
-        navigator.getUserMedia (
-
-          // constraints
-                {
-                   video: true,
-                   audio: false
-                },
-
-          // successCallback
-                function(a) {   
-                const video = document.querySelector('video');
-
-                video.srcObject = a; 
-
-                },
-
-          // errorCallback
-                function() {}
-
-        );
-
-    } 
+  componentDidMount() {
+   this.main();
+   console.log("componentDidMount");
+  }
 
 
     main = async () => {
 
-      this.startWebcam();
 
-      var canvas = document.getElementById('my-canvas');
-      var ctx = canvas.getContext('2d');
-      var img = document.querySelector('video');
+      Webcam();
+
+      const canvas = document.getElementById('my-canvas');
+      const ctx = canvas.getContext('2d');
+      const img = document.querySelector('video');
 
       canvas.setAttribute('width', `${img.width}`);
       canvas.setAttribute('height', `${img.height}`);
 
-      var imageScaleFactor = 0.5;
-      var outputStride = 16;
-      var flipHorizontal = false;
-
+      const imageScaleFactor = 0.5;
+      const outputStride = 16;
+      const flipHorizontal = false;
       
-      var model = await posenet.load();
+      const model = await posenet.load();
 
 
       while (true) {
 
         let poses = [];
 
-
-         const pose = await model.estimateSinglePose(img, imageScaleFactor, flipHorizontal, outputStride);
-
+        const pose = await model.estimateSinglePose(img, imageScaleFactor, flipHorizontal, outputStride);
 
         const modelLoad = "LOADED";
 
-        if (modelLoad !=="") {
-          const elem1 = document.getElementById('loading-message');
-          elem1.style.display = 'none';
-          const elem2 = document.getElementById('sk-cube-grid');
-          elem2.style.display = 'none';
-        }
+        Loader(modelLoad);
 
+        poses.push(pose);
 
-         poses.push(pose);
+        ctx.drawImage(img, 0, 0, 640, 480);
 
-         ctx.drawImage(img, 0, 0, 640, 480);
-
-          pose.keypoints.forEach(function(keypoint) {
+        pose.keypoints.forEach(function(keypoint) {
               if (keypoint.score > 0.50) {
 
               ctx.beginPath();
@@ -85,70 +58,29 @@ class App extends Component {
               ctx.fillStyle = 'rgb(255, 0, 0)';
               ctx.fill();
 
-            //  console.log("/body part:", keypoint.part, "/score:", keypoint.score, 
-              //  "/position.x:", keypoint.position.x, "/position.y:", keypoint.position.y);
+              }
+         });
 
-                }
-            });
+        const adjacentKeyPoints = posenet.getAdjacentKeyPoints(
+              pose.keypoints, 0.1);
 
-
-
-
-      const adjacentKeyPoints = posenet.getAdjacentKeyPoints(
-            pose.keypoints, 0.1);
-
-            adjacentKeyPoints.forEach((keypoints) => {
-                  console.log(keypoints);
-            });
-          
-
-      function toTuple({y, x}) {
-              return [y, x];
-            }
-
-
-       function drawSkeleton(keypoints, minConfidence , ctx, scale = 1) {
-          const adjacentKeyPoints = posenet.getAdjacentKeyPoints(
-                 keypoints, minConfidence);
-
-                adjacentKeyPoints.forEach((keypoints) => {
-                  drawSegment(toTuple(keypoints[0].position),
-                  toTuple(keypoints[1].position), 'aqua', scale, ctx);
+              adjacentKeyPoints.forEach((keypoints) => {
+                    console.log(keypoints);
               });
-            }  
+          
+        DrawSkeleton(pose.keypoints, 0.5, ctx);
 
-
-       function drawSegment([ay, ax], [by, bx], color, scale, ctx) {
-            ctx.beginPath();
-            ctx.moveTo(ax * scale, ay * scale);
-            ctx.lineTo(bx * scale, by * scale);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = 'aqua';
-            ctx.stroke();
-          }
-
-
-        drawSkeleton(pose.keypoints, 0.5, ctx);
-
-
-       await tf.nextFrame();
+        await tf.nextFrame();
 
       }
 
     }
         
 
-
    render() {
         
         return (
-                 <Comp
-                 main0 = {this.main0}
-                 main = {this.main}
-
-                 
-                 />
-      
+                 <Comp />      
        );
     }
 

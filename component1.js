@@ -8,7 +8,7 @@ const Comp = (props) => (
 <div >
 
 
-    <div className="App" onLoad = {props.main}>
+    <div className="App">
       <header className="App-header" >
         <img src={logo} className="App-logo" alt="logo" /> 
         <h4 className="App-title">PoseNet with Tensorflow.js and REACT</h4>
